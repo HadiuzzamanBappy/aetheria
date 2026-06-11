@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/react';
 import { Button } from '@/components/ui';
@@ -14,16 +14,34 @@ import {
   ChevronUp,
   MapPin,
 } from 'lucide-react';
-import { useOrderStore } from '@/store/useOrderStore';
 import { formatCurrency } from '@/utils/format';
+import { dbAxiosInstance } from '@/lib/axios';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, isSignedIn, isLoaded } = useUser();
-  const orders = useOrderStore((state) => state.orders);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   
   // Collapsible tracking state
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user) {
+      dbAxiosInstance.get('/api/orders')
+        .then((res) => {
+          setOrders(res.data || []);
+        })
+        .catch((err) => {
+          console.error('Failed to load orders from Neon:', err);
+        })
+        .finally(() => {
+          setLoadingOrders(false);
+        });
+    } else {
+      setLoadingOrders(false);
+    }
+  }, [user, isSignedIn, isLoaded]);
 
   const toggleExpandOrder = (orderId: string) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -148,7 +166,12 @@ export default function ProfilePage() {
           <Package className="h-6 w-6 text-primary-400" /> Order History & Status Tracker
         </h2>
 
-        {orders.length === 0 ? (
+        {loadingOrders ? (
+          <div className="glass p-12 text-center rounded-3xl border border-purple-900/15 flex items-center justify-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500"></div>
+            <p className="text-xs text-gray-400">Loading order history...</p>
+          </div>
+        ) : orders.length === 0 ? (
           <div className="glass p-12 text-center rounded-3xl border border-purple-900/15 space-y-4">
             <Package className="h-10 w-10 text-gray-500 mx-auto" />
             <p className="text-white font-semibold text-base">No orders placed yet</p>
@@ -266,7 +289,7 @@ export default function ProfilePage() {
                             Purchased Products
                           </h4>
                           <div className="divide-y divide-purple-900/5 max-h-48 overflow-y-auto pr-1">
-                            {order.details.items.map((item) => (
+                            {order.details.items.map((item: any) => (
                               <div key={item.id} className="py-2.5 flex items-center gap-3">
                                 <img
                                   src={item.thumbnail}

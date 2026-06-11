@@ -6,6 +6,8 @@ import { Button } from '@/components/ui';
 import { formatCurrency } from '@/utils/format';
 import { Star, ChevronLeft, ShoppingCart, ShieldCheck, Truck, RefreshCw, Heart } from 'lucide-react';
 import { useWishlistStore } from '@/store/useWishlistStore';
+import { useUser } from '@clerk/react';
+import { productApi } from '@/features/products/services/productApi';
 
 export default function ProductDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,35 +32,48 @@ export default function ProductDetailsPage() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [newReview, setNewReview] = useState({ reviewerName: '', rating: 5, comment: '' });
   const [reviewSuccess, setReviewSuccess] = useState('');
+  const { user, isSignedIn } = useUser();
 
   useEffect(() => {
     if (product) {
       setActiveImage(product.thumbnail);
-      // Mock customer reviews
-      setReviews([
-        {
-          reviewerName: 'Sophia Carter',
-          rating: 5,
-          comment: `Absolutely love this! The design is extremely sleek and the premium build quality is immediately noticeable. Highly recommend to anyone looking to level up their desktop setup.`,
-          date: '2026-06-01T12:00:00.000Z',
-          helpfulCount: 24,
-        },
-        {
-          reviewerName: 'Marcus Vance',
-          rating: 4,
-          comment: `Great device with exceptional response times. Build feels premium. The only drawback is that the power cable could be slightly longer. Overall, very satisfied!`,
-          date: '2026-05-28T14:30:00.000Z',
-          helpfulCount: 15,
-        },
-        {
-          reviewerName: 'Elena Rostova',
-          rating: 5,
-          comment: `Aetheria has outdone themselves. Speed, aesthetics, and reliability are top-notch. It fits perfectly into my minimalist work studio!`,
-          date: '2026-05-20T09:15:00.000Z',
-          helpfulCount: 8,
-        }
-      ]);
+      // Fetch persistent reviews from database
+      productApi.getProductReviews(product.id)
+        .then((data) => {
+          if (data && data.length > 0) {
+            setReviews(data);
+          } else {
+            // Fallback for demo catalog visual completeness
+            setReviews([
+              {
+                reviewerName: 'Sophia Carter',
+                rating: 5,
+                comment: `Absolutely love this! The design is extremely sleek and the premium build quality is immediately noticeable. Highly recommend to anyone looking to level up their desktop setup.`,
+                date: '2026-06-01T12:00:00.000Z',
+                helpfulCount: 24,
+              },
+              {
+                reviewerName: 'Marcus Vance',
+                rating: 4,
+                comment: `Great device with exceptional response times. Build feels premium. The only drawback is that the power cable could be slightly longer. Overall, very satisfied!`,
+                date: '2026-05-28T14:30:00.000Z',
+                helpfulCount: 15,
+              },
+              {
+                reviewerName: 'Elena Rostova',
+                rating: 5,
+                comment: `Aetheria has outdone themselves. Speed, aesthetics, and reliability are top-notch. It fits perfectly into my minimalist work studio!`,
+                date: '2026-05-20T09:15:00.000Z',
+                helpfulCount: 8,
+              }
+            ]);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to retrieve product reviews from Neon:', err);
+        });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product]);
 
   const reviewsStats = React.useMemo(() => {
@@ -85,18 +100,26 @@ export default function ProductDetailsPage() {
     };
   }, [reviews, product]);
 
-  const handleReviewSubmit = (e: React.FormEvent) => {
+  const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newReview.reviewerName || !newReview.comment) return;
-    const submitted = {
-      ...newReview,
-      date: new Date().toISOString(),
-      helpfulCount: 0,
-    };
-    setReviews([submitted, ...reviews]);
-    setNewReview({ reviewerName: '', rating: 5, comment: '' });
-    setReviewSuccess('Your review has been successfully submitted! Thank you.');
-    setTimeout(() => setReviewSuccess(''), 5000);
+    if (!newReview.comment) return;
+    if (!isSignedIn) {
+      alert('Please log in using the header to submit a review.');
+      return;
+    }
+    try {
+      const submitted = await productApi.createProductReview({
+        productId: Number(id),
+        rating: newReview.rating,
+        comment: newReview.comment,
+      });
+      setReviews([submitted, ...reviews]);
+      setNewReview((prev) => ({ ...prev, comment: '' }));
+      setReviewSuccess('Your review has been successfully submitted! Thank you.');
+      setTimeout(() => setReviewSuccess(''), 5000);
+    } catch (err: any) {
+      console.error('Failed to submit review to database:', err);
+    }
   };
 
   if (isLoading) {
@@ -349,59 +372,63 @@ export default function ProductDetailsPage() {
           </div>
 
           {/* Write a review Form */}
-          <form onSubmit={handleReviewSubmit} className="space-y-4 pt-6 border-t border-purple-900/15">
-            <h4 className="font-bold text-sm text-white">Share Your Experience</h4>
-            
-            {reviewSuccess && (
-              <div className="p-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-xs rounded-xl font-medium">
-                {reviewSuccess}
-              </div>
-            )}
+          {!isSignedIn ? (
+            <div className="p-6 bg-purple-950/20 border border-purple-900/10 rounded-2xl text-xs text-gray-400 text-center space-y-2 mt-6">
+              <p>You must be signed in to submit a rating and comment.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleReviewSubmit} className="space-y-4 pt-6 border-t border-purple-900/15">
+              <h4 className="font-bold text-sm text-white">Share Your Experience</h4>
+              
+              {reviewSuccess && (
+                <div className="p-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-xs rounded-xl font-medium">
+                  {reviewSuccess}
+                </div>
+              )}
 
-            <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] text-gray-500 uppercase block mb-1 font-semibold">Your Name</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.username || 'Anonymous User'}
+                    className="w-full bg-purple-950/10 border border-purple-900/30 rounded-xl px-3 py-2 text-xs outline-none opacity-50 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-500 uppercase block mb-1 font-semibold">Score Rating</label>
+                  <select
+                    value={newReview.rating}
+                    onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })}
+                    className="w-full bg-purple-950/10 border border-purple-900/30 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary-500/50 border-purple-800/40 text-slate-950"
+                  >
+                    <option value="5" className="text-slate-950">5 - Exceptional</option>
+                    <option value="4" className="text-slate-950">4 - Good</option>
+                    <option value="3" className="text-slate-950">3 - Average</option>
+                    <option value="2" className="text-slate-950">2 - Poor</option>
+                    <option value="1" className="text-slate-950">1 - Terrible</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label className="text-[10px] text-gray-500 uppercase block mb-1 font-semibold">Your Name</label>
-                <input
-                  type="text"
+                <label className="text-[10px] text-gray-500 uppercase block mb-1 font-semibold">Comments</label>
+                <textarea
                   required
-                  placeholder="e.g. Emily Smith"
-                  value={newReview.reviewerName}
-                  onChange={(e) => setNewReview({ ...newReview, reviewerName: e.target.value })}
-                  className="w-full bg-purple-950/10 border border-purple-900/30 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary-500/50"
+                  rows={3}
+                  placeholder="What did you like or dislike about this device?"
+                  value={newReview.comment}
+                  onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                  className="w-full bg-purple-950/10 border border-purple-900/30 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary-500/50 resize-none"
                 />
               </div>
-              <div>
-                <label className="text-[10px] text-gray-500 uppercase block mb-1 font-semibold">Score Rating</label>
-                <select
-                  value={newReview.rating}
-                  onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })}
-                  className="w-full bg-purple-950/10 border border-purple-900/30 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary-500/50 border-purple-800/40 text-slate-950"
-                >
-                  <option value="5" className="text-slate-950">5 - Exceptional</option>
-                  <option value="4" className="text-slate-950">4 - Good</option>
-                  <option value="3" className="text-slate-950">3 - Average</option>
-                  <option value="2" className="text-slate-950">2 - Poor</option>
-                  <option value="1" className="text-slate-950">1 - Terrible</option>
-                </select>
-              </div>
-            </div>
 
-            <div>
-              <label className="text-[10px] text-gray-500 uppercase block mb-1 font-semibold">Comments</label>
-              <textarea
-                required
-                rows={3}
-                placeholder="What did you like or dislike about this device?"
-                value={newReview.comment}
-                onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
-                className="w-full bg-purple-950/10 border border-purple-900/30 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary-500/50 resize-none"
-              />
-            </div>
-
-            <Button variant="primary" type="submit" size="sm" className="w-full py-2.5">
-              Submit Review Feedback
-            </Button>
-          </form>
+              <Button variant="primary" type="submit" size="sm" className="w-full py-2.5">
+                Submit Review Feedback
+              </Button>
+            </form>
+          )}
         </div>
       </div>
     </div>

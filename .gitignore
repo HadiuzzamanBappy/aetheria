@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.dev.vars
 
 # Editor directories and files
 .vscode/*
@@ -21,4 +22,7 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+
+# Temporary workspace files
+scratch/
+.wrangler/

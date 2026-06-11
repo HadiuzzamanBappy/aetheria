@@ -1,4 +1,4 @@
-import { axiosInstance } from '@/lib/axios';
+import { dbAxiosInstance } from '@/lib/axios';
 import type { CartProduct } from '@/types';
 
 export interface OrderInput {
@@ -24,23 +24,9 @@ export interface OrderResponse {
 
 export const checkoutApi = {
   createOrder: async (order: OrderInput): Promise<OrderResponse> => {
-    // Simulating checkout order placement
-    // DummyJSON doesn't have an order endpoint, so we can POST to a generic dummy endpoint
-    // or simulate a network call to ensure local/offline demo integrity.
     try {
-      await axiosInstance.post('/posts/add', {
-        title: 'Order Placement',
-        userId: 1,
-        body: JSON.stringify(order),
-      });
-
-      return {
-        orderId: `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
-        status: 'success',
-        message: 'Your order has been placed successfully.',
-        timestamp: new Date().toISOString(),
-        details: order,
-      };
+      const response = await dbAxiosInstance.post<OrderResponse>('/api/orders', order);
+      return response.data;
     } catch (error: any) {
       throw new Error(error.message || 'Checkout payment failed');
     }

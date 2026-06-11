@@ -1,4 +1,4 @@
-import { createClerkClient } from '@clerk/backend';
+import { createClerkClient, verifyToken } from '@clerk/backend';
 import { Client } from '@neondatabase/serverless';
 
 export interface Env {
@@ -20,7 +20,9 @@ async function getAuthDetailsFromRequest(request: Request, env: Env): Promise<{ 
   });
 
   try {
-    const verifiedToken = await clerkClient.verifyToken(token);
+    const verifiedToken = await verifyToken(token, {
+      secretKey: env.CLERK_SECRET_KEY,
+    });
     const userId = verifiedToken.sub;
     
     // Fetch user details from Clerk to get the user's name
