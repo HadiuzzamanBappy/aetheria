@@ -2,7 +2,7 @@
 DATABASE_URL="postgresql://neondb_owner:<your_neon_password>@ep-fancy-darkness-apnhff0k-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # Clerk Publishable Key (copy this from your Clerk Dashboard)
-CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
+VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
 
 # Clerk Secret Key (copy this from your Clerk Dashboard)
 CLERK_SECRET_KEY=your_clerk_secret_key_here

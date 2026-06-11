@@ -4,7 +4,7 @@ import { Client } from '@neondatabase/serverless';
 export interface Env {
   DATABASE_URL: string;
   CLERK_SECRET_KEY: string;
-  CLERK_PUBLISHABLE_KEY: string;
+  VITE_CLERK_PUBLISHABLE_KEY: string;
 }
 
 async function getUserIdFromRequest(request: Request, env: Env): Promise<string | null> {

@@ -4,7 +4,7 @@ import { Client } from '@neondatabase/serverless';
 export interface Env {
   DATABASE_URL: string;
   CLERK_SECRET_KEY: string;
-  CLERK_PUBLISHABLE_KEY: string;
+  VITE_CLERK_PUBLISHABLE_KEY: string;
 }
 
 async function getAuthDetailsFromRequest(request: Request, env: Env): Promise<{ userId: string; fullName: string } | null> {
@@ -15,7 +15,7 @@ async function getAuthDetailsFromRequest(request: Request, env: Env): Promise<{ 
   const token = authHeader.substring(7);
   
   const clerkClient = createClerkClient({
-    publishableKey: env.CLERK_PUBLISHABLE_KEY || (env as any).VITE_CLERK_PUBLISHABLE_KEY,
+    publishableKey: env.VITE_CLERK_PUBLISHABLE_KEY,
     secretKey: env.CLERK_SECRET_KEY,
   });
 
