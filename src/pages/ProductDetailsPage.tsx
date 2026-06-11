@@ -8,6 +8,7 @@ import { Star, ChevronLeft, ShoppingCart, ShieldCheck, Truck, RefreshCw, Heart }
 import { useWishlistStore } from '@/store/useWishlistStore';
 import { useUser } from '@clerk/react';
 import { productApi } from '@/features/products/services/productApi';
+import type { Review } from '@/types/product';
 
 export default function ProductDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,23 +30,25 @@ export default function ProductDetailsPage() {
   const [activeImage, setActiveImage] = useState('');
 
   // Reviews list and write-review states
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [newReview, setNewReview] = useState({ reviewerName: '', rating: 5, comment: '' });
   const [reviewSuccess, setReviewSuccess] = useState('');
   const { user, isSignedIn } = useUser();
 
   useEffect(() => {
     if (product) {
-      setActiveImage(product.thumbnail);
       // Fetch persistent reviews from database
       productApi.getProductReviews(product.id)
         .then((data) => {
-          if (data && data.length > 0) {
-            setReviews(data);
+          // Ensure data is an array
+          const reviewsData = Array.isArray(data) ? data : [];
+          if (reviewsData.length > 0) {
+            setReviews(reviewsData);
           } else {
             // Fallback for demo catalog visual completeness
-            setReviews([
+            const fallbackReviews: Review[] = [
               {
+                productId: product.id,
                 reviewerName: 'Sophia Carter',
                 rating: 5,
                 comment: `Absolutely love this! The design is extremely sleek and the premium build quality is immediately noticeable. Highly recommend to anyone looking to level up their desktop setup.`,
@@ -53,6 +56,7 @@ export default function ProductDetailsPage() {
                 helpfulCount: 24,
               },
               {
+                productId: product.id,
                 reviewerName: 'Marcus Vance',
                 rating: 4,
                 comment: `Great device with exceptional response times. Build feels premium. The only drawback is that the power cable could be slightly longer. Overall, very satisfied!`,
@@ -60,24 +64,29 @@ export default function ProductDetailsPage() {
                 helpfulCount: 15,
               },
               {
+                productId: product.id,
                 reviewerName: 'Elena Rostova',
                 rating: 5,
                 comment: `Aetheria has outdone themselves. Speed, aesthetics, and reliability are top-notch. It fits perfectly into my minimalist work studio!`,
                 date: '2026-05-20T09:15:00.000Z',
                 helpfulCount: 8,
               }
-            ]);
+            ];
+            setReviews(fallbackReviews);
           }
         })
-        .catch((err) => {
+        .catch((err: Error) => {
           console.error('Failed to retrieve product reviews from Neon:', err);
+          // Set fallback reviews on error
+          setReviews([]);
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product]);
+  }, [product?.id]);
 
   const reviewsStats = React.useMemo(() => {
-    const totalReviews = reviews.length;
+    const reviewsArray = Array.isArray(reviews) ? reviews : [];
+    const totalReviews = reviewsArray.length;
     if (totalReviews === 0) {
       return {
         average: product?.rating || 0,
@@ -85,10 +94,10 @@ export default function ProductDetailsPage() {
         stars: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
       };
     }
-    const sum = reviews.reduce((s, r) => s + r.rating, 0);
+    const sum = reviewsArray.reduce((s, r) => s + r.rating, 0);
     const average = Math.round((sum / totalReviews) * 10) / 10;
     const starCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    reviews.forEach((r) => {
+    reviewsArray.forEach((r) => {
       const star = Math.max(1, Math.min(5, Math.round(r.rating))) as 5|4|3|2|1;
       starCounts[star] += 1;
     });
@@ -117,7 +126,7 @@ export default function ProductDetailsPage() {
       setNewReview((prev) => ({ ...prev, comment: '' }));
       setReviewSuccess('Your review has been successfully submitted! Thank you.');
       setTimeout(() => setReviewSuccess(''), 5000);
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       console.error('Failed to submit review to database:', err);
     }
   };
@@ -159,7 +168,11 @@ export default function ProductDetailsPage() {
         <div className="space-y-6">
           <div className="bg-purple-950/10 border border-purple-900/10 rounded-2xl p-8 h-[400px] flex items-center justify-center overflow-hidden">
             <img
-              src={activeImage || product.thumbnail}
+              src={
+                activeImage && product?.images?.includes(activeImage)
+                  ? activeImage
+                  : product?.thumbnail
+              }
               alt={product.title}
               className="object-contain max-h-full max-w-full hover:scale-105 transition-transform duration-300"
             />
@@ -172,7 +185,7 @@ export default function ProductDetailsPage() {
                 key={idx}
                 onClick={() => setActiveImage(img)}
                 className={`bg-purple-950/20 border rounded-xl p-2 h-20 flex items-center justify-center overflow-hidden cursor-pointer transition-colors ${
-                  (activeImage || product.thumbnail) === img
+                  activeImage === img
                     ? 'border-primary-500 bg-primary-500/5 shadow'
                     : 'border-purple-900/10 hover:border-primary-500/40'
                 }`}
@@ -332,7 +345,7 @@ export default function ProductDetailsPage() {
           <h3 className="font-extrabold text-xl text-white">Product Reviews</h3>
           
           <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2">
-            {reviews.map((rev, index) => (
+            {Array.isArray(reviews) && reviews.map((rev, index) => (
               <div key={index} className="space-y-2 border-b border-purple-900/10 pb-4 last:border-0 last:pb-0">
                 <div className="flex items-center justify-between">
                   <div>
@@ -390,6 +403,7 @@ export default function ProductDetailsPage() {
                 <div>
                   <label className="text-[10px] text-gray-500 uppercase block mb-1 font-semibold">Your Name</label>
                   <input
+                  aria-label="Reviewer Name"
                     type="text"
                     disabled
                     value={`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.username || 'Anonymous User'}
@@ -399,6 +413,7 @@ export default function ProductDetailsPage() {
                 <div>
                   <label className="text-[10px] text-gray-500 uppercase block mb-1 font-semibold">Score Rating</label>
                   <select
+                    aria-label="Rating"
                     value={newReview.rating}
                     onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })}
                     className="w-full bg-purple-950/10 border border-purple-900/30 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary-500/50 border-purple-800/40 text-slate-950"

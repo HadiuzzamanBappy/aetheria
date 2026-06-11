@@ -33,3 +33,15 @@ export const ProductFilterSchema = z.object({
 });
 
 export type ProductFilter = z.infer<typeof ProductFilterSchema>;
+
+export const ReviewSchema = z.object({
+  id: z.string().optional(),
+  productId: z.number(),
+  reviewerName: z.string(),
+  rating: z.number().min(1).max(5),
+  comment: z.string(),
+  date: z.string(),
+  helpfulCount: z.number().default(0),
+});
+
+export type Review = z.infer<typeof ReviewSchema>;
