@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "wrangler pages dev ./dist --compatibility-date=2026-06-11 --proxy http://localhost:5173",
+    "db:init": "node scripts/db-init.js",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
