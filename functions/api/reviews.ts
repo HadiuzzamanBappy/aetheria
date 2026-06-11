@@ -15,7 +15,7 @@ async function getAuthDetailsFromRequest(request: Request, env: Env): Promise<{ 
   const token = authHeader.substring(7);
   
   const clerkClient = createClerkClient({
-    publishableKey: env.CLERK_PUBLISHABLE_KEY,
+    publishableKey: env.CLERK_PUBLISHABLE_KEY || (env as any).VITE_CLERK_PUBLISHABLE_KEY,
     secretKey: env.CLERK_SECRET_KEY,
   });
 
