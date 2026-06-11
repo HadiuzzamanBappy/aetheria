@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  /* Vibrant Cyan/Teal Bright Primary Colors */
+  --color-primary-50: hsl(187, 85%, 97%);
+  --color-primary-100: hsl(187, 85%, 92%);
+  --color-primary-200: hsl(187, 85%, 82%);
+  --color-primary-300: hsl(187, 85%, 68%);
+  --color-primary-400: hsl(187, 85%, 52%);
+  --color-primary-500: hsl(187, 90%, 42%);
+  --color-primary-600: hsl(187, 90%, 36%);
+  --color-primary-700: hsl(187, 90%, 28%);
+  --color-primary-800: hsl(187, 90%, 22%);
+  --color-primary-950: hsl(187, 90%, 10%);
+
+  /* Map purple to soft slates & bright teals to maintain compatibility with existing HTML classes */
+  --color-purple-950: hsl(187, 45%, 97%); /* Very soft light cyan background */
+  --color-purple-900: hsl(187, 25%, 88%); /* Soft light borders */
+  --color-purple-800: hsl(187, 25%, 80%); /* Input borders */
+  --color-purple-700: hsl(187, 80%, 36%); /* Brand color accents */
+  --color-purple-600: hsl(187, 80%, 32%);
+  --color-purple-500: hsl(187, 90%, 42%); /* Brand color highlights */
+  --color-purple-300: hsl(215, 25%, 38%); /* Subtitle slate text */
+  --color-purple-200: hsl(215, 30%, 22%); /* Dark slate text labels */
+  --color-purple-100: hsl(215, 30%, 12%);
+
+  --font-sans: 'Outfit', system-ui, -apple-system, sans-serif;
+  
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+html, body {
+  font-family: var(--font-sans);
+  background: radial-gradient(circle at top left, #e0f2f1, #f8fafc 50%);
+  color: #334155;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar for Light Mode */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Glassmorphism classes adapted for bright light theme */
+.glass {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(187, 222, 225, 0.4);
+}
+
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(187, 222, 225, 0.6);
+}
+
+/* Global Typography Overrides for Dark Slate Readability */
+h1, h2, h3, h4, h5, h6 {
+  color: #0f172a !important; /* Ensures clean slate headings in light mode */
+}
+
+p {
+  color: #475569; /* Slate paragraph text */
+}
+
+input, select, textarea {
+  color: #0f172a !important; /* Typed text inside fields */
+}
+
+/* Map .text-white helper classes to dark slate in light theme, 
+   except when they are inside buttons, badges, or success states */
+.text-white:not(button):not(button *):not(.bg-primary-600 *):not(.bg-emerald-500 *):not(.bg-red-500 *):not(.bg-primary-600) {
+  color: #0f172a !important;
+}
+
+.text-purple-200 {
+  color: #1e293b !important;
+}
+
+.text-purple-300 {
+  color: #475569 !important;
+}
+
+/* Ensure secondary buttons and icons look premium in cyan/teal colors */
+.bg-purple-950\/40 {
+  background-color: rgba(204, 238, 240, 0.4) !important;
+}
+
+.border-purple-800\/40 {
+  border-color: rgba(13, 148, 136, 0.25) !important;
+}
+
+.text-purple-200\/80 {
+  color: rgba(15, 23, 42, 0.75) !important;
+}
